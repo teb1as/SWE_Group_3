@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pomodoro Timer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+        }
+        #timer {
+            font-size: 48px;
+            margin: 20px 0;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Pomodoro Timer</h1>
+    <div id="timer">25:00</div>
+    <button id="startBtn">Start</button>
+    <button id="resetBtn">Reset</button>
+
+    <script>
+        let timeLeft = 1500; // 25 minutes in seconds
+        let timerId;
+        let isRunning = false;
+
+        const timerElement = document.getElementById('timer');
+        const startBtn = document.getElementById('startBtn');
+        const resetBtn = document.getElementById('resetBtn');
+
+        // Function to update the timer display
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            timerElement.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        }
+
+        // Function to start the timer
+        function startTimer() {
+            if (!isRunning) {
+                isRunning = true;
+                startBtn.textContent = 'Pause';
+                timerId = setInterval(() => {
+                    if (timeLeft > 0) {
+                        timeLeft--;
+                        updateTimerDisplay();
+                    } else {
+                        clearInterval(timerId);
+                        alert('Pomodoro session complete!');
+                    }
+                }, 1000);
+
+                // Make a POST request to the Flask backend to start Pomodoro
+                fetch('/start_pomodoro', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => console.log(data.message));
+            } else {
+                clearInterval(timerId);
+                isRunning = false;
+                startBtn.textContent = 'Start';
+            }
+        }
+
+        // Function to reset the timer
+        function resetTimer() {
+            clearInterval(timerId);
+            timeLeft = 1500;
+            isRunning = false;
+            startBtn.textContent = 'Start';
+            updateTimerDisplay();
+        }
+
+        // Attach event listeners to buttons
+        startBtn.addEventListener('click', startTimer);
+        resetBtn.addEventListener('click', resetTimer);
+    </script>
+</body>
+</html>
