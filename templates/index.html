@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pomodoro Timer</title>
+    <title>Custom Pomodoro Timer</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -14,26 +14,37 @@
             font-size: 48px;
             margin: 20px 0;
         }
-        button {
-            padding: 10px 20px;
-            font-size: 20px;
+        input, button {
+            padding: 10px;
+            font-size: 16px;
+            margin: 10px;
         }
     </style>
 </head>
 <body>
-    <h1>Pomodoro Timer</h1>
+    <h1>Custom Pomodoro Timer</h1>
+
+    <label for="workTime">Work Time (minutes):</label>
+    <input type="number" id="workTime" value="25">
+    
+    <label for="breakTime">Break Time (minutes):</label>
+    <input type="number" id="breakTime" value="5">
+
     <div id="timer">25:00</div>
     <button id="startBtn">Start</button>
     <button id="resetBtn">Reset</button>
 
     <script>
-        let timeLeft = 1500; // 25 minutes in seconds
+        let timeLeft;
         let timerId;
         let isRunning = false;
+        let isWorkSession = true;
 
         const timerElement = document.getElementById('timer');
         const startBtn = document.getElementById('startBtn');
         const resetBtn = document.getElementById('resetBtn');
+        const workTimeInput = document.getElementById('workTime');
+        const breakTimeInput = document.getElementById('breakTime');
 
         // Function to update the timer display
         function updateTimerDisplay() {
@@ -45,22 +56,46 @@
         // Function to start the timer
         function startTimer() {
             if (!isRunning) {
+                let workTime = parseInt(workTimeInput.value) * 60;  // Convert minutes to seconds
+                let breakTime = parseInt(breakTimeInput.value) * 60;  // Convert minutes to seconds
+
+                if (isWorkSession) {
+                    timeLeft = workTime;
+                } else {
+                    timeLeft = breakTime;
+                }
+                updateTimerDisplay();
+
                 isRunning = true;
                 startBtn.textContent = 'Pause';
+
                 timerId = setInterval(() => {
                     if (timeLeft > 0) {
                         timeLeft--;
                         updateTimerDisplay();
                     } else {
                         clearInterval(timerId);
-                        alert('Pomodoro session complete!');
+                        isRunning = false;
+                        startBtn.textContent = 'Start';
+
+                        if (isWorkSession) {
+                            alert('Work session complete! Time for a break.');
+                        } else {
+                            alert('Break over! Time to get back to work.');
+                        }
+
+                        isWorkSession = !isWorkSession;
                     }
                 }, 1000);
 
-                // Make a POST request to the Flask backend to start Pomodoro
-                fetch('/start_pomodoro', { method: 'POST' })
-                    .then(response => response.json())
-                    .then(data => console.log(data.message));
+                // Make a POST request to start the Pomodoro session
+                fetch('/start_pomodoro', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ workTime: workTime / 60, breakTime: breakTime / 60 })
+                }).then(response => response.json())
+                  .then(data => console.log(data.message));
+
             } else {
                 clearInterval(timerId);
                 isRunning = false;
@@ -71,15 +106,22 @@
         // Function to reset the timer
         function resetTimer() {
             clearInterval(timerId);
-            timeLeft = 1500;
             isRunning = false;
+            isWorkSession = true;
             startBtn.textContent = 'Start';
-            updateTimerDisplay();
+            timerElement.textContent = `${workTimeInput.value}:00`;
         }
 
         // Attach event listeners to buttons
         startBtn.addEventListener('click', startTimer);
         resetBtn.addEventListener('click', resetTimer);
+
+        // Automatically update timer display when user changes the work time input
+        workTimeInput.addEventListener('input', () => {
+            if (!isRunning && isWorkSession) {
+                timerElement.textContent = `${workTimeInput.value}:00`;
+            }
+        });
     </script>
 </body>
 </html>
