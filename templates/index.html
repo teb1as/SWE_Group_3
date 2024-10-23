@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Custom Pomodoro Timer</title>
+    <title>ClockWork</title>
     <style>
         body {
             margin: 0;
@@ -74,10 +74,10 @@
     </header>
     <main>
         <label for="workTime">Work Time (minutes):</label>
-        <input type="number" id="workTime" value="25">
+        <input type="number" id="workTime" value="25" min="0">
         
         <label for="breakTime">Break Time (minutes):</label>
-        <input type="number" id="breakTime" value="5">
+        <input type="number" id="breakTime" value="5" min="0">
 
         <div id="timer">25:00</div>
         <button id="startBtn">Start</button>
