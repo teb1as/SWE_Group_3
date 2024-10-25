@@ -57,12 +57,10 @@
         button {
             cursor: pointer;
         }
-
         button:hover {
             background-color: #4a90e2;
             color: white;
         }
-
         button:active {
             transform: scale(0.98);
         }
@@ -73,6 +71,13 @@
         <h1>ClockWork</h1>
     </header>
     <main>
+        <h2>Start Your Pomodoro Session</h2>
+        <label for="userName">Name:</label>
+        <input type="text" id="userName" placeholder="Your name" required>
+
+        <label for="userEmail">Email:</label>
+        <input type="email" id="userEmail" placeholder="Your email" required>
+
         <label for="workTime">Work Time (minutes):</label>
         <input type="number" id="workTime" value="25" min="0">
         
@@ -96,18 +101,18 @@
         const workTimeInput = document.getElementById('workTime');
         const breakTimeInput = document.getElementById('breakTime');
 
-        // Function to update the timer display
         function updateTimerDisplay() {
             const minutes = Math.floor(timeLeft / 60);
             const seconds = timeLeft % 60;
             timerElement.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
         }
 
-        // Function to start the timer
         function startTimer() {
             if (!isRunning) {
-                let workTime = parseInt(workTimeInput.value) * 60;  // Convert minutes to seconds
-                let breakTime = parseInt(breakTimeInput.value) * 60;  // Convert minutes to seconds
+                const userName = document.getElementById('userName').value;
+                const userEmail = document.getElementById('userEmail').value;
+                let workTime = parseInt(workTimeInput.value) * 60;
+                let breakTime = parseInt(breakTimeInput.value) * 60;
 
                 if (isWorkSession) {
                     timeLeft = workTime;
@@ -133,16 +138,14 @@
                         } else {
                             alert('Break over! Time to get back to work.');
                         }
-
                         isWorkSession = !isWorkSession;
                     }
                 }, 1000);
 
-                // Make a POST request to start the Pomodoro session
                 fetch('/start_pomodoro', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ workTime: workTime / 60, breakTime: breakTime / 60 })
+                    body: JSON.stringify({ userName, userEmail, workTime: workTime / 60, breakTime: breakTime / 60 })
                 }).then(response => response.json())
                   .then(data => console.log(data.message));
 
@@ -153,7 +156,6 @@
             }
         }
 
-        // Function to reset the timer
         function resetTimer() {
             clearInterval(timerId);
             isRunning = false;
@@ -162,11 +164,9 @@
             timerElement.textContent = `${workTimeInput.value}:00`;
         }
 
-        // Attach event listeners to buttons
         startBtn.addEventListener('click', startTimer);
         resetBtn.addEventListener('click', resetTimer);
 
-        // Automatically update timer display when user changes the work time input
         workTimeInput.addEventListener('input', () => {
             if (!isRunning && isWorkSession) {
                 timerElement.textContent = `${workTimeInput.value}:00`;
