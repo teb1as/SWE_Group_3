@@ -22,6 +22,12 @@
             top: 20px;
             left: 20px;
         }
+        .user-info {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            text-align: right;
+        }
         main {
             display: flex;
             flex-direction: column;
@@ -30,6 +36,27 @@
             padding: 20px;
             border-radius: 12px;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+        #playlist-container {
+            margin-top: 10px;
+            width: 100%;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        #playlist-box {
+            background-color: #2b2b2b;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            width: 250px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-left: 30px;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
         }
         #timer {
             font-size: 4rem;
@@ -70,24 +97,61 @@
     <header>
         <h1>ClockWork</h1>
     </header>
-    <main>
-        <h2>Start Your Pomodoro Session</h2>
-        <label for="userName">Name:</label>
-        <input type="text" id="userName" placeholder="Your name" required>
+    <div class="user-info">
+        {% if user_name %}
+            <p>Welcome, {{ user_name }}</p>
+        {% else %}
+            <a href="/login"><button>Login with Spotify</button></a>
+        {% endif %}
+    </div>
+    <div class="container">
+        <main>
+            <h2>Start Your Pomodoro Session</h2>
+            <label for="userName">Name:</label>
+            <input type="text" id="userName" placeholder="Your name" required>
 
-        <label for="userEmail">Email:</label>
-        <input type="email" id="userEmail" placeholder="Your email" required>
+            <label for="userEmail">Email:</label>
+            <input type="email" id="userEmail" placeholder="Your email" required>
 
-        <label for="workTime">Work Time (minutes):</label>
-        <input type="number" id="workTime" value="25" min="0">
-        
-        <label for="breakTime">Break Time (minutes):</label>
-        <input type="number" id="breakTime" value="5" min="0">
+            <label for="workTime">Work Time (minutes):</label>
+            <input type="number" id="workTime" value="25" min="0">
+            
+            <label for="breakTime">Break Time (minutes):</label>
+            <input type="number" id="breakTime" value="5" min="0">
 
-        <div id="timer">25:00</div>
-        <button id="startBtn">Start</button>
-        <button id="resetBtn">Reset</button>
-    </main>
+            <div id="timer">25:00</div>
+            <button id="startBtn">Start</button>
+            <button id="resetBtn">Reset</button>
+        </main>
+    </div>
+
+    {% if user_name %}
+    <div id="playlist-box">
+        <h3>Select a Study Playlist:</h3>
+        <button id="loadPlaylistsBtn">Load Playlists</button>
+        <div id="playlist-container"></div>
+    </div>
+    {% endif %}
+
+    <script>
+        document.getElementById('loadPlaylistsBtn').addEventListener('click', () => {
+            fetch('/get_playlists')
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('playlist-container');
+                    container.innerHTML = '';
+                    data.forEach(playlist => {
+                        const link = document.createElement('a');
+                        link.href = playlist.url;
+                        link.textContent = playlist.name;
+                        link.target = '_blank';
+                        container.appendChild(link);
+                        container.appendChild(document.createElement('br'));
+                    });
+                })
+                .catch(error => console.error('Error fetching playlists:', error));
+        });
+    </script>
 
     <script>
         let timeLeft;
