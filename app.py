@@ -112,11 +112,42 @@ def get_playlists():
     sp = spotipy.Spotify(auth=token_info['access_token'])
     playlists = sp.current_user_playlists(limit=10)  # fetch playlists (max 10)
     playlist_data = [
-        {'name': playlist['name'], 'url': playlist['external_urls']['spotify']}
+        {'name': playlist['name'], 'url': playlist['external_urls']['spotify'], 'uri' : playlist['uri']}
         for playlist in playlists['items']
     ]
 
     return jsonify(playlist_data)
+
+@app.route('/play_music', methods=['POST'])
+def play_music():
+    data = request.json
+    uri = data.get('uri')
+    token_info = session.get('token_info', None)
+    sp = spotipy.Spotify(auth=token_info['access_token'])
+    sp.start_playback(device_id=None, context_uri=uri, uris=None, offset= {'position': 0}, position_ms=0)
+
+    return jsonify({"message": "Music playback has begun"})
+
+
+@app.route('/pause_music', methods=['POST'])
+def pause_music():
+    token_info = session.get('token_info', None)
+    sp = spotipy.Spotify(auth=token_info['access_token'])
+    sp.pause_playback()
+
+    return jsonify({"message": "Music paused"})
+
+
+@app.route('/resume_music', methods=['POST'])
+def resume_music():
+    token_info = session.get('token_info', None)
+    sp = spotipy.Spotify(auth=token_info['access_token'])
+    sp.start_playback()
+
+    return jsonify({"message": "Music resumed"})
+
+
+
 
 @app.route('/logout')
 def logout():
