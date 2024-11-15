@@ -192,4 +192,149 @@
             <button type="submit">Login</button>
         </form>
         <button onclick="showCreateBox()">Create Account</button>
-        <
+        <button onclick="showResetBox()">Forgot Password?</button>
+    </div>
+    <div class="create-box" id="createBox" style="display: none;">
+        <h3>Create Account</h3>
+        <form method="POST" action="/create_dashboard">
+            <input type="text" name="username" placeholder="Username" required />
+            <input type="password" name="password" placeholder="Password" required />
+            <button type="submit">Create</button>
+        </form>
+    </div>
+    <div class="reset-box" id="resetBox" style="display: none;">
+        <h3>Reset Password</h3>
+        <form method="POST" action="/reset_password">
+            <input type="text" name="username" placeholder="Username" required />
+            <input type="password" name="new_password" placeholder="New Password" required />
+            <button type="submit">Reset</button>
+        </form>
+    </div>
+    {% endif %}
+    
+    <script>
+        const loginBtn = document.getElementById('loginBtn');
+        const loginBox = document.getElementById('loginBox');
+        const createBox = document.getElementById('createBox');
+        const resetBox = document.getElementById('resetBox');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const timerDisplay = document.getElementById('timerDisplay');
+        
+        let timeLeft = 25 * 60; // 25 minutes in seconds
+        let timerId = null;
+        
+        loginBtn?.addEventListener('click', function() {
+            loginBox.style.display = 'block';
+        });
+        
+        function closeLoginBox() {
+            loginBox.style.display = 'none';
+        }
+
+        function showCreateBox() {
+            createBox.style.display = 'block';
+            loginBox.style.display = 'none';
+        }
+        
+        function showResetBox() {
+            resetBox.style.display = 'block';
+            loginBox.style.display = 'none';
+        }
+
+        function updateDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        async function playPlaylist(playlistId) {
+            try {
+                const response = await fetch(`/play_playlist/${playlistId}`);
+                const result = await response.json();
+                if (!result.success) {
+                    console.error('Error playing playlist:', result.error);
+                }
+            } catch (error) {
+                console.error('Error playing playlist:', error);
+            }
+        }
+
+        document.getElementById('decreaseTime').addEventListener('click', function() {
+            if (timerId === null) {  // Only allow changes when timer is not running
+                const currentMinutes = Math.floor(timeLeft / 60);
+                if (currentMinutes > 0) {
+                    timeLeft -= 60;
+                    updateDisplay();
+                }
+            }
+        });
+
+        document.getElementById('increaseTime').addEventListener('click', function() {
+            if (timerId === null) {  // Only allow changes when timer is not running
+                const currentMinutes = Math.floor(timeLeft / 60);
+                if (currentMinutes < 99) {
+                    timeLeft += 60;
+                    updateDisplay();
+                }
+            }
+        });
+
+        startBtn.addEventListener('click', function() {
+            if (timerId === null) {
+                timerId = setInterval(() => {
+                    if (timeLeft > 0) {
+                        timeLeft--;
+                        updateDisplay();
+                    } else {
+                        clearInterval(timerId);
+                        timerId = null;
+                    }
+                }, 1000);
+                startBtn.textContent = 'Pause';
+            } else {
+                clearInterval(timerId);
+                timerId = null;
+                startBtn.textContent = 'Start';
+            }
+        });
+
+        stopBtn.addEventListener('click', function() {
+            clearInterval(timerId);
+            timerId = null;
+            startBtn.textContent = 'Start';
+        });
+
+        resetBtn.addEventListener('click', function() {
+            clearInterval(timerId);
+            timerId = null;
+            timeLeft = 25 * 60;
+            updateDisplay();
+            startBtn.textContent = 'Start';
+        });
+
+        window.addEventListener('load', async () => {
+            try {
+                const response = await fetch('/get_playlists');
+                const playlists = await response.json();
+            
+                const playlistContainer = document.getElementById('playlist-container');
+                playlistContainer.innerHTML = '';
+            
+                playlists.forEach(playlist => {
+                    const playlistElement = document.createElement('div');
+                    playlistElement.classList.add('playlist-item');
+                    playlistElement.innerHTML = `
+                        <h3>${playlist.name}</h3>
+                        <button onclick="playPlaylist('${playlist.id}')">Play</button>
+                    `;
+                    playlistContainer.appendChild(playlistElement);
+                });
+            } catch (error) {
+                console.error('Error fetching playlists:', error);
+            }
+        });
+    </script>
+</body>
+</html>
