@@ -65,9 +65,33 @@
             border: 5px solid #4a90e2;
             border-radius: 10px;
             padding: 20px;
-            width: 150px;
+            width: 250px;
             margin: 20px 0;
             box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+        .timer-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        .timer-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            justify-content: center;
+        }
+        .timer-arrow {
+            background: none;
+            border: none;
+            color: #4a90e2;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0 10px;
+        }
+        .timer-arrow:hover {
+            color: white;
+            background: none;
         }
         input, button {
             padding: 12px 20px;
@@ -91,6 +115,40 @@
         button:active {
             transform: scale(0.98);
         }
+        .login-box, .create-box, .reset-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #333;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            width: 300px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 1000;
+        }
+        .login-box input, .create-box input, .reset-box input {
+            width: calc(100% - 40px);
+            margin: 10px 0;
+        }
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: #e0e0e0;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 5px 10px;
+        }
+        .close-btn:hover {
+            color: #ff4444;
+            background: none;
+        }
     </style>
 </head>
 <body>
@@ -100,142 +158,38 @@
     <div class="user-info">
         {% if user_name %}
             <p>Welcome, {{ user_name }}</p>
+            <a href="/logout"><button>Logout</button></a>
         {% else %}
-            <a href="/login"><button>Login with Spotify</button></a>
+            <button id="loginBtn">Login</button>
         {% endif %}
     </div>
     <div class="container">
-        <main>
-            <h2>Start Your Pomodoro Session</h2>
-            <label for="userName">Name:</label>
-            <input type="text" id="userName" placeholder="Your name" required>
-
-            <label for="userEmail">Email:</label>
-            <input type="email" id="userEmail" placeholder="Your email" required>
-
-            <label for="workTime">Work Time (minutes):</label>
-            <input type="number" id="workTime" value="25" min="0">
-            
-            <label for="breakTime">Break Time (minutes):</label>
-            <input type="number" id="breakTime" value="5" min="0">
-
-            <div id="timer">25:00</div>
-            <button id="startBtn">Start</button>
-            <button id="resetBtn">Reset</button>
-        </main>
+        <div id="timer">
+            <div class="timer-controls">
+                <button class="timer-arrow" id="decreaseTime">←</button>
+                <p id="timerDisplay">25:00</p>
+                <button class="timer-arrow" id="increaseTime">→</button>
+            </div>
+            <div class="timer-buttons">
+                <button id="startBtn">Start</button>
+                <button id="stopBtn">Stop</button>
+                <button id="resetBtn">Reset</button>
+            </div>
+        </div>
+        <div id="playlist-box">
+            <h2>Suggested Playlists</h2>
+            <div id="playlist-container"></div>
+        </div>
     </div>
 
-    {% if user_name %}
-    <div id="playlist-box">
-        <h3>Select a Study Playlist:</h3>
-        <button id="loadPlaylistsBtn">Load Playlists</button>
-        <div id="playlist-container"></div>
-    </div>
-    {% endif %}
-
-    <script>
-        document.getElementById('loadPlaylistsBtn').addEventListener('click', () => {
-            fetch('/get_playlists')
-                .then(response => response.json())
-                .then(data => {
-                    const container = document.getElementById('playlist-container');
-                    container.innerHTML = '';
-                    data.forEach(playlist => {
-                        const link = document.createElement('a');
-                        link.href = playlist.url;
-                        link.textContent = playlist.name;
-                        link.target = '_blank';
-                        container.appendChild(link);
-                        container.appendChild(document.createElement('br'));
-                    });
-                })
-                .catch(error => console.error('Error fetching playlists:', error));
-        });
-    </script>
-
-    <script>
-        let timeLeft;
-        let timerId;
-        let isRunning = false;
-        let isWorkSession = true;
-
-        const timerElement = document.getElementById('timer');
-        const startBtn = document.getElementById('startBtn');
-        const resetBtn = document.getElementById('resetBtn');
-        const workTimeInput = document.getElementById('workTime');
-        const breakTimeInput = document.getElementById('breakTime');
-
-        function updateTimerDisplay() {
-            const minutes = Math.floor(timeLeft / 60);
-            const seconds = timeLeft % 60;
-            timerElement.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-        }
-
-        function startTimer() {
-            if (!isRunning) {
-                const userName = document.getElementById('userName').value;
-                const userEmail = document.getElementById('userEmail').value;
-                let workTime = parseInt(workTimeInput.value) * 60;
-                let breakTime = parseInt(breakTimeInput.value) * 60;
-
-                if (isWorkSession) {
-                    timeLeft = workTime;
-                } else {
-                    timeLeft = breakTime;
-                }
-                updateTimerDisplay();
-
-                isRunning = true;
-                startBtn.textContent = 'Pause';
-
-                timerId = setInterval(() => {
-                    if (timeLeft > 0) {
-                        timeLeft--;
-                        updateTimerDisplay();
-                    } else {
-                        clearInterval(timerId);
-                        isRunning = false;
-                        startBtn.textContent = 'Start';
-
-                        if (isWorkSession) {
-                            alert('Work session complete! Time for a break.');
-                        } else {
-                            alert('Break over! Time to get back to work.');
-                        }
-                        isWorkSession = !isWorkSession;
-                    }
-                }, 1000);
-
-                fetch('/start_pomodoro', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userName, userEmail, workTime: workTime / 60, breakTime: breakTime / 60 })
-                }).then(response => response.json())
-                  .then(data => console.log(data.message));
-
-            } else {
-                clearInterval(timerId);
-                isRunning = false;
-                startBtn.textContent = 'Start';
-            }
-        }
-
-        function resetTimer() {
-            clearInterval(timerId);
-            isRunning = false;
-            isWorkSession = true;
-            startBtn.textContent = 'Start';
-            timerElement.textContent = `${workTimeInput.value}:00`;
-        }
-
-        startBtn.addEventListener('click', startTimer);
-        resetBtn.addEventListener('click', resetTimer);
-
-        workTimeInput.addEventListener('input', () => {
-            if (!isRunning && isWorkSession) {
-                timerElement.textContent = `${workTimeInput.value}:00`;
-            }
-        });
-    </script>
-</body>
-</html>
+    {% if not user_name %}
+    <div class="login-box" id="loginBox" style="display: none;">
+        <button class="close-btn" onclick="closeLoginBox()">×</button>
+        <h3>Login</h3>
+        <form method="POST" action="/login">
+            <input type="text" name="username" placeholder="Username" required />
+            <input type="password" name="password" placeholder="Password" required />
+            <button type="submit">Login</button>
+        </form>
+        <button onclick="showCreateBox()">Create Account</button>
+        <
