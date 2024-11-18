@@ -75,6 +75,10 @@
             gap: 10px;
             justify-content: center;
         }
+        .timer-buttons button {
+            padding: 8px 16px;
+            font-size: 14px;
+        }
         .timer-controls {
             display: flex;
             align-items: center;
@@ -150,23 +154,20 @@
             background: none;
         }
         .timer-type {
-        font-size: 1.5rem;
-        margin-bottom: 10px;
-        color: #4a90e2;
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: #4a90e2;
         }
-    
         .timer-selector {
             display: flex;
             gap: 10px;
             justify-content: center;
             margin-bottom: 10px;
         }
-        
         .timer-selector button {
             padding: 8px 16px;
             font-size: 14px;
         }
-        
         .timer-selector button.active {
             background-color: #4a90e2;
             color: white;
@@ -222,6 +223,7 @@
         <button onclick="showResetBox()">Forgot Password?</button>
     </div>
     <div class="create-box" id="createBox" style="display: none;">
+        <button class="close-btn" onclick="closeCreateBox()">×</button>
         <h3>Create Account</h3>
         <form method="POST" action="/create_dashboard">
             <input type="text" name="username" placeholder="Username" required />
@@ -230,6 +232,7 @@
         </form>
     </div>
     <div class="reset-box" id="resetBox" style="display: none;">
+        <button class="close-btn" onclick="closeResetBox()">×</button>
         <h3>Reset Password</h3>
         <form method="POST" action="/reset_password">
             <input type="text" name="username" placeholder="Username" required />
@@ -289,6 +292,12 @@
         function closeLoginBox() {
             loginBox.style.display = 'none';
         }
+        function closeResetBox() {
+            resetBox.style.display = 'none';
+        }
+        function closeCreateBox() {
+            createBox.style.display = 'none';
+        }
 
         function showCreateBox() {
             createBox.style.display = 'block';
@@ -319,33 +328,33 @@
         }
 
         document.getElementById('decreaseTime').addEventListener('click', function() {
-        if (timerId === null) {
-            const currentMinutes = Math.floor(timeLeft / 60);
-            if (currentMinutes > 0) {
-                timeLeft -= 60;
-                if (isStudyTime) {
-                    studyTimeLeft = timeLeft;
-                } else {
-                    breakTimeLeft = timeLeft;
+            if (timerId === null) {
+                const currentMinutes = Math.floor(timeLeft / 60);
+                if (currentMinutes > 0) {
+                    timeLeft -= 60;
+                    if (isStudyTime) {
+                        studyTimeLeft = timeLeft;
+                    } else {
+                        breakTimeLeft = timeLeft;
+                    }
+                    updateDisplay();
                 }
-                updateDisplay();
             }
-        }
         });
 
         document.getElementById('increaseTime').addEventListener('click', function() {
-        if (timerId === null) {
-            const currentMinutes = Math.floor(timeLeft / 60);
-            if (currentMinutes < 99) {
-                timeLeft += 60;
-                if (isStudyTime) {
-                    studyTimeLeft = timeLeft;
-                } else {
-                    breakTimeLeft = timeLeft;
+            if (timerId === null) {
+                const currentMinutes = Math.floor(timeLeft / 60);
+                if (currentMinutes < 99) {
+                    timeLeft += 60;
+                    if (isStudyTime) {
+                        studyTimeLeft = timeLeft;
+                    } else {
+                        breakTimeLeft = timeLeft;
+                    }
+                    updateDisplay();
                 }
-                updateDisplay();
             }
-        }
         });
 
         startBtn.addEventListener('click', function() {
