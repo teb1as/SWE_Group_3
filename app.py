@@ -14,7 +14,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 SPOTIPY_CLIENT_ID = '5cf10df01f7e497a8bd1567dff8e7a6a'
 SPOTIPY_CLIENT_SECRET = '5aaf5b8eda6b44a79a4c6c64b735ba29'
 SPOTIPY_REDIRECT_URI = 'http://127.0.0.1:5000/callback'
-SCOPE = 'user-library-read playlist-modify-public user-read-playback-state user-modify-playback-state'
+SCOPE = 'user-library-read playlist-modify-public user-read-playback-state user-modify-playback-state playlist-read-private'
 
 # Initialize Spotify OAuth
 sp_oauth = SpotifyOAuth(
@@ -40,7 +40,8 @@ with app.app_context():
 @app.route('/')
 def home():
     user_name = session.get('user_name')
-    return render_template('index.html', user_name=user_name)
+    sp_user_name = session.get('sp_user_name')
+    return render_template('index.html', user_name=user_name, sp_user_name = sp_user_name)
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -91,46 +92,73 @@ def spotify_login():
 @app.route('/callback')
 def callback():
     code = request.args.get('code')
-    token_info = sp_oauth.get_access_token(code)
-    session['token_info'] = token_info
+    if not code:
+        return "Authorization code not found", 400
+
+    try:
+        token_info = sp_oauth.get_access_token(code)
+        session['token_info'] = token_info
+
+        sp = spotipy.Spotify(auth=token_info['access_token'])
+        user_info = sp.current_user()
+        session['sp_user_name'] = user_info.get('display_name', 'User')  # if no username, just display user
+
+        print("Session after login:", session)
+    except Exception as e:
+        print("Error during callback:", e)
+        return "Failed to get access token", 500
+
     return redirect(url_for('home'))
 
-@app.route('/get_playlists')
-def get_playlists():
-    try:
-        token_info = session.get('token_info', None)
-        if not token_info:
-            return jsonify({"error": "Not logged into Spotify"}), 401
-        
-        sp = spotipy.Spotify(auth=token_info['access_token'])
-        
-        # Get study-related playlists
-        results = sp.search(q='study music', type='playlist', limit=5)
-        playlists = results['playlists']['items']
-        
-        playlist_data = [{
-            'name': playlist['name'],
-            'id': playlist['id'],
-            'image_url': playlist['images'][0]['url'] if playlist['images'] else None
-        } for playlist in playlists]
-        
-        return jsonify(playlist_data)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    # code = request.args.get('code')
+    # token_info = sp_oauth.get_access_token(code)
+    # session['token_info'] = token_info
+    # return redirect(url_for('home'))
 
-@app.route('/play_playlist/<playlist_id>')
-def play_playlist(playlist_id):
-    try:
-        token_info = session.get('token_info', None)
-        if not token_info:
-            return jsonify({"error": "Not logged into Spotify"}), 401
-        
-        sp = spotipy.Spotify(auth=token_info['access_token'])
-        sp.start_playback(context_uri=f'spotify:playlist:{playlist_id}')
-        
-        return jsonify({"success": True})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+@app.route('/get_playlists', methods=['GET'])
+def get_playlists():
+    token_info = session.get('token_info', None)
+    if not token_info:
+        return redirect(url_for('login'))  # redirect to login
+
+    sp = spotipy.Spotify(auth=token_info['access_token'])
+    playlists = sp.current_user_playlists(limit=10)  # fetch playlists (max 10)
+    newplaylists = [x for x in playlists['items'] if x is not None]
+    playlist_data = [
+        {'name': playlist['name'], 'url': playlist['external_urls']['spotify'], 'uri' : playlist['uri']}
+        for playlist in newplaylists
+    ]
+
+    return jsonify(playlist_data)
+
+@app.route('/play_music', methods=['POST'])
+def play_music():
+    data = request.json
+    uri = data.get('uri')
+    token_info = session.get('token_info', None)
+    sp = spotipy.Spotify(auth=token_info['access_token'])
+    sp.start_playback(device_id=None, context_uri=uri, uris=None, offset= {'position': 0}, position_ms=0)
+
+    return jsonify({"message": "Music playback has begun"})
+
+
+@app.route('/pause_music', methods=['POST'])
+def pause_music():
+    token_info = session.get('token_info', None)
+    sp = spotipy.Spotify(auth=token_info['access_token'])
+    sp.pause_playback()
+
+    return jsonify({"message": "Music paused"})
+
+
+@app.route('/resume_music', methods=['POST'])
+def resume_music():
+    token_info = session.get('token_info', None)
+    sp = spotipy.Spotify(auth=token_info['access_token'])
+    sp.start_playback()
+
+    return jsonify({"message": "Music resumed"})
+
 
 @app.route('/logout')
 def logout():
@@ -139,3 +167,4 @@ def logout():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
