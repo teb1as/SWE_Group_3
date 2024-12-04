@@ -54,6 +54,20 @@
             align-items: center;
             margin-left: 30px;
         }
+                 #music-player{
+            background-color: #2b2b2b;
+            padding: 10px;
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            width: 250px;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            margin-left: -290px;
+            margin-top: 500px;
+
+        } 
+
         .container {
             display: flex;
             gap: 20px;
@@ -172,6 +186,14 @@
             background-color: #4a90e2;
             color: white;
         }
+        .spotify-button {
+            position: absolute;
+            top: 150px;
+            right: 20px;
+            text-align: right;
+            display: block;
+        }
+
     </style>
 </head>
 <body>
@@ -185,7 +207,16 @@
         {% else %}
             <button id="loginBtn">Login</button>
         {% endif %}
+
     </div>
+
+    <div class="spotify-button">
+        {% if not sp_user_name %}
+            <a href="/spotify_login"><button id="SpotifyBtn">Connect to Spotify</button></a>
+        {% endif %}
+    </div>
+
+
     <div class="container">
         <div id="timer">
             <div class="timer-selector">
@@ -203,10 +234,6 @@
                 <button id="stopBtn">Stop</button>
                 <button id="resetBtn">Reset</button>
             </div>
-        </div>
-        <div id="playlist-box">
-            <h2>Suggested Playlists</h2>
-            <div id="playlist-container"></div>
         </div>
     </div>
 
@@ -241,6 +268,114 @@
         </form>
     </div>
     {% endif %}
+
+    {% if sp_user_name %}
+
+    <div id="playlist-box">
+        <h3>Select a Study Playlist:</h3>
+        <button id="loadPlaylistsBtn">Load Playlists</button>
+        <div id="playlist-container"></div>
+    </div>
+
+    <div id="music-player">
+        <img src="/static/play.png" width="50" height="50" id = "controller" name="play" onclick="clicky()"/>
+          
+    </div>
+
+    {% endif %}
+
+    <script>
+
+        var currUri;
+        var uriChange = 0;
+
+        function clicky(){
+
+            uri = currUri;
+            if(document.getElementById("controller").name == "play"){
+
+                if(uriChange == 0){
+                    fetch('/resume_music', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            }).then(response => response.json())
+                            .then(data => console.log(data.message));
+                    
+                }
+                else{
+                fetch('/play_music', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ uri })
+                            }).then(response => response.json())
+                            .then(data => console.log(data.message));
+                            uriChange = 0;
+                        }
+
+                document.getElementById("controller").src = "/static/pause.png";
+                document.getElementById("controller").name = "pause";
+            }
+            else{
+                fetch('/pause_music', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' }
+                            }).then(response => response.json())
+                            .then(data => console.log(data.message));
+                document.getElementById("controller").src = "/static/play.png";
+                document.getElementById("controller").name = "play";
+            }
+        }
+
+
+        document.getElementById('loadPlaylistsBtn').addEventListener('click', () => {
+
+            fetch('/get_playlists')
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('playlist-container');
+                    container.innerHTML = '';
+                    data.forEach(playlist => {
+                        const btn = document.createElement('BUTTON');
+                        btn.style = "border: 0.5px solid #FFFFFF";
+                        btn.textContent = playlist.name;
+                        btn.uri = playlist.uri;
+                        btn.addEventListener('click', function(){
+                            uri = btn.uri;
+                            if(currUri != uri){
+                                currUri = uri;
+                                uriChange = 1;
+
+                                fetch('/pause_music', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' }
+                                            }).then(response => response.json())
+                                            .then(data => console.log(data.message));
+                                document.getElementById("controller").src = "/static/play.png";
+                                document.getElementById("controller").name = "play";
+
+                            }
+
+                            var buttonList = document.getElementById('playlist-container').querySelectorAll('BUTTON');
+                            buttonList.forEach(button => {
+                                button.style = "background-color: #444; border: 0.5px solid #FFFFFF";
+                            });
+                            btn.style = "background-color: #4a90e2";
+                            document.getElementById('music-player').style.display = "flex";
+                         
+
+                        });
+                        container.appendChild(btn);
+                        container.appendChild(document.createElement('br'));
+
+                    });
+                })
+                .catch(error => console.error('Error fetching playlists:', error));
+        });
+
+
+
+    </script>
+
     
     <script>
         const loginBtn = document.getElementById('loginBtn');
@@ -288,6 +423,7 @@
         loginBtn?.addEventListener('click', function() {
             loginBox.style.display = 'block';
         });
+
         
         function closeLoginBox() {
             loginBox.style.display = 'none';
@@ -315,18 +451,6 @@
             timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         }
         
-        async function playPlaylist(playlistId) {
-            try {
-                const response = await fetch(`/play_playlist/${playlistId}`);
-                const result = await response.json();
-                if (!result.success) {
-                    console.error('Error playing playlist:', result.error);
-                }
-            } catch (error) {
-                console.error('Error playing playlist:', error);
-            }
-        }
-
         document.getElementById('decreaseTime').addEventListener('click', function() {
             if (timerId === null) {
                 const currentMinutes = Math.floor(timeLeft / 60);
@@ -409,27 +533,6 @@
             startBtn.textContent = 'Start';
         });
 
-        window.addEventListener('load', async () => {
-            try {
-                const response = await fetch('/get_playlists');
-                const playlists = await response.json();
-            
-                const playlistContainer = document.getElementById('playlist-container');
-                playlistContainer.innerHTML = '';
-            
-                playlists.forEach(playlist => {
-                    const playlistElement = document.createElement('div');
-                    playlistElement.classList.add('playlist-item');
-                    playlistElement.innerHTML = `
-                        <h3>${playlist.name}</h3>
-                        <button onclick="playPlaylist('${playlist.id}')">Play</button>
-                    `;
-                    playlistContainer.appendChild(playlistElement);
-                });
-            } catch (error) {
-                console.error('Error fetching playlists:', error);
-            }
-        });
     </script>
 </body>
 </html>
