@@ -160,6 +160,25 @@ def resume_music():
     return jsonify({"message": "Music resumed"})
 
 
+@app.route('/skip_track', methods=['POST'])
+def skip_track():
+    token_info = session.get('token_info', None)
+    sp = spotipy.Spotify(auth=token_info['access_token'])
+    sp.next_track()
+
+    return jsonify({"message": "Skipped to next track"})
+
+@app.route('/back_track', methods=['POST'])
+def back_track():
+    token_info = session.get('token_info', None)
+    sp = spotipy.Spotify(auth=token_info['access_token'])
+    sp.previous_track()
+
+    return jsonify({"message": "Went back to previous track"})
+
+
+
+
 @app.route('/logout')
 def logout():
     session.clear()
@@ -167,4 +186,3 @@ def logout():
 
 if __name__ == '__main__':
     app.run(debug=True)
-
