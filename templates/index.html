@@ -59,7 +59,7 @@
             padding: 10px;
             border-radius: 12px;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-            width: 250px;
+            width: 270px;
             display: none;
             flex-direction: column;
             align-items: center;
@@ -278,8 +278,9 @@
     </div>
 
     <div id="music-player">
+        <img src="/static/goback1.png" style = "padding-left: 50px" width="50" height="50" id = "trackback" name="skip" onclick="clickback()"/>          
         <img src="/static/play.png" width="50" height="50" id = "controller" name="play" onclick="clicky()"/>
-          
+        <img src="/static/skip1.png" width="50" height="50" id = "trackskip" name="skip" onclick="clickskip()"/>          
     </div>
 
     {% endif %}
@@ -326,6 +327,33 @@
             }
         }
 
+        function clickskip(){
+            fetch('/skip_track', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' }
+                            }).then(response => response.json())
+                            .then(data => console.log(data.message));
+
+            if(document.getElementById("controller").name == "play"){
+                document.getElementById("controller").src = "/static/pause.png";
+                document.getElementById("controller").name = "pause";
+            }
+
+        }
+
+        function clickback(){
+            fetch('/back_track', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' }
+                            }).then(response => response.json())
+                            .then(data => console.log(data.message));
+
+                if(document.getElementById("controller").name == "play"){
+                    document.getElementById("controller").src = "/static/pause.png";
+                    document.getElementById("controller").name = "pause";
+            }
+        }
+
 
         document.getElementById('loadPlaylistsBtn').addEventListener('click', () => {
 
@@ -360,7 +388,7 @@
                                 button.style = "background-color: #444; border: 0.5px solid #FFFFFF";
                             });
                             btn.style = "background-color: #4a90e2";
-                            document.getElementById('music-player').style.display = "flex";
+                            document.getElementById('music-player').style.display = "block";
                          
 
                         });
