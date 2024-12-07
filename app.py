@@ -37,12 +37,15 @@ class UserDashboard(db.Model):
 with app.app_context():
     db.create_all()
 
+
 @app.route('/')
 def home():
     user_name = session.get('user_name')
     sp_user_name = session.get('sp_user_name')
     return render_template('index.html', user_name=user_name, sp_user_name = sp_user_name)
 
+
+#validates user login detils
 @app.route('/login', methods=['POST'])
 def login():
     username = request.form.get('username')
@@ -56,6 +59,8 @@ def login():
     
     return "Invalid username or password", 400
 
+
+#loads user info
 @app.route('/create_dashboard', methods=['POST'])
 def create_dashboard():
     username = request.form.get('username')
@@ -71,6 +76,8 @@ def create_dashboard():
     session['user_name'] = username
     return redirect(url_for('home'))
 
+
+#allows user to reset password if info exists
 @app.route('/reset_password', methods=['POST'])
 def reset_password():
     username = request.form.get('username')
@@ -84,11 +91,14 @@ def reset_password():
     
     return "User not found", 400
 
+#returns spotify authentication page
 @app.route('/spotify_login')
 def spotify_login():
     auth_url = sp_oauth.get_authorize_url()
     return redirect(auth_url)
 
+
+#handles spotify login attempt
 @app.route('/callback')
 def callback():
     code = request.args.get('code')
@@ -110,11 +120,7 @@ def callback():
 
     return redirect(url_for('home'))
 
-    # code = request.args.get('code')
-    # token_info = sp_oauth.get_access_token(code)
-    # session['token_info'] = token_info
-    # return redirect(url_for('home'))
-
+#returns user playlist data
 @app.route('/get_playlists', methods=['GET'])
 def get_playlists():
     token_info = session.get('token_info', None)
@@ -131,6 +137,7 @@ def get_playlists():
 
     return jsonify(playlist_data)
 
+#starts playback of context url
 @app.route('/play_music', methods=['POST'])
 def play_music():
     data = request.json
@@ -175,8 +182,6 @@ def back_track():
     sp.previous_track()
 
     return jsonify({"message": "Went back to previous track"})
-
-
 
 
 @app.route('/logout')
