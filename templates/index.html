@@ -236,7 +236,7 @@
             </div>
         </div>
     </div>
-
+    <!-- creates user sign in box if needed-->
     {% if not user_name %}
     <div class="login-box" id="loginBox" style="display: none;">
         <button class="close-btn" onclick="closeLoginBox()">×</button>
@@ -270,6 +270,7 @@
     {% endif %}
 
     {% if sp_user_name %}
+    <!-- shows playlist container if user is logged into spotify-->
 
     <div id="playlist-box">
         <h3>Select a Study Playlist:</h3>
@@ -278,6 +279,7 @@
     </div>
 
     <div id="music-player">
+        <!-- loads images for playback control buttons-->
         <img src="/static/goback1.png" style = "padding-left: 50px" width="50" height="50" id = "trackback" name="skip" onclick="clickback()"/>          
         <img src="/static/play.png" width="50" height="50" id = "controller" name="play" onclick="clicky()"/>
         <img src="/static/skip1.png" width="50" height="50" id = "trackskip" name="skip" onclick="clickskip()"/>          
@@ -288,12 +290,12 @@
     <script>
 
         var currUri;
-        var uriChange = 0;
-
-        function clicky(){
+        var uriChange = 0; //tracks if user has switched songs
+        
+        function clicky(){ //handls starting and stopping playback
 
             uri = currUri;
-            if(document.getElementById("controller").name == "play"){
+            if(document.getElementById("controller").name == "play"){//if play
 
                 if(uriChange == 0){
                     fetch('/resume_music', {
@@ -313,10 +315,10 @@
                             uriChange = 0;
                         }
 
-                document.getElementById("controller").src = "/static/pause.png";
+                document.getElementById("controller").src = "/static/pause.png";//changes button back to pause
                 document.getElementById("controller").name = "pause";
             }
-            else{
+            else{//if pause
                 fetch('/pause_music', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' }
@@ -327,28 +329,28 @@
             }
         }
 
-        function clickskip(){
+        function clickskip(){//if user wants to skip track
             fetch('/skip_track', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' }
                             }).then(response => response.json())
                             .then(data => console.log(data.message));
 
-            if(document.getElementById("controller").name == "play"){
+            if(document.getElementById("controller").name == "play"){//sets button to show play
                 document.getElementById("controller").src = "/static/pause.png";
                 document.getElementById("controller").name = "pause";
             }
 
         }
 
-        function clickback(){
+        function clickback(){//if user wants to skip track
             fetch('/back_track', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' }
                             }).then(response => response.json())
                             .then(data => console.log(data.message));
 
-                if(document.getElementById("controller").name == "play"){
+                if(document.getElementById("controller").name == "play"){//sets button to show play
                     document.getElementById("controller").src = "/static/pause.png";
                     document.getElementById("controller").name = "pause";
             }
@@ -363,13 +365,13 @@
                     const container = document.getElementById('playlist-container');
                     container.innerHTML = '';
                     data.forEach(playlist => {
-                        const btn = document.createElement('BUTTON');
+                        const btn = document.createElement('BUTTON');//creates button for each user playlist
                         btn.style = "border: 0.5px solid #FFFFFF";
                         btn.textContent = playlist.name;
                         btn.uri = playlist.uri;
                         btn.addEventListener('click', function(){
                             uri = btn.uri;
-                            if(currUri != uri){
+                            if(currUri != uri){//pauses music if playlist is switched
                                 currUri = uri;
                                 uriChange = 1;
 
